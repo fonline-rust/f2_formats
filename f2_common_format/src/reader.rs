@@ -1,0 +1,268 @@
+use std::fmt;
+
+use represent::{TypeAnalyzer, Maker, MakeWith, MakeType, Analyze};
+use fo_net_protocol::generics::{slots::{Slots, SlotLoadError}, Has, HasValue, collections::{BigStr, BigArr}, length::{Length, LenRest, Verify}};
+
+use crate::{sniffer::{F2Sniffer, F2SniffError, Sniffer}, Pid};
+
+pub const SLOT_OBJECT_TYPE: usize = 0;
+pub const SLOT_SUB_TYPE: usize = 1;
+pub const SLOT_SCRIPT_TYPE: usize = 2;
+pub const SLOT_INVENTORY_COUNT: usize = 3;
+
+pub struct F2Reader<'a, C> {
+    sniffer: F2Sniffer<'a>,
+    slots: Vec<Slots>,
+    context: C,
+}
+
+pub struct F2Context;
+
+impl<'a, C> HasValue<F2Context> for F2Reader<'a, C> {
+    type Value = C;
+    fn give_value(&self) -> &C {
+        &self.context
+    }
+
+    fn give_value_mut(&mut self) -> &mut C {
+        &mut self.context
+    }
+}
+
+impl<'a, C> F2Reader<'a, C> {
+    pub fn read<T: MakeWith<Self>>(data: &'a [u8], context: C) -> Result<T, F2ReaderError> {
+        let sniffer = F2Sniffer::new(data);
+        let mut this = Self {
+            sniffer,
+            slots: vec![Slots::default()],
+            context,
+        };
+        let res = this.make();
+        if res.is_ok() {
+            let bytes_left = this.sniffer.len();
+            if bytes_left > 0 {
+                return Err(F2ReaderError::BytesLeft(bytes_left));
+            }
+        }
+        res
+    }
+}
+
+#[derive(Debug)]
+pub enum F2ReaderError {
+    BytesLeft(usize),
+    SniffError(F2SniffError),
+    TryFromPrimitive(String),
+    SlotLoadError(SlotLoadError<String>),
+    InvalidObjectType,
+    InvalidScriptType,
+    ProtoNotFound(Pid),
+    Validation(String),
+}
+impl<E: fmt::Debug> From<SlotLoadError<E>> for F2ReaderError {
+    fn from(value: SlotLoadError<E>) -> Self {
+        let err = match value {
+            SlotLoadError::EmptySlot => SlotLoadError::EmptySlot,
+            SlotLoadError::TryFrom(from) => SlotLoadError::TryFrom(format!("{:?}", from)),
+        };
+        Self::SlotLoadError(err)
+    }
+}
+impl F2ReaderError {
+    pub fn try_from_primitive<T: fmt::Debug>(value: T) -> Self {
+        Self::TryFromPrimitive(format!("{:?}", value))
+    }
+}
+
+impl<'a, C> TypeAnalyzer for F2Reader<'a, C> {}
+
+impl<'a, C> Maker for F2Reader<'a, C> {
+    type Error = F2ReaderError;
+}
+
+impl<'a, C, T: MakeWith<Self>> MakeType<T> for F2Reader<'a, C> {
+    fn make_type(&mut self) -> Result<T, Self::Error> {
+        T::make_with(self)
+    }
+}
+
+#[derive(Debug)]
+pub struct SlotsSpace<T>(pub T);
+
+impl<'a, C, T> MakeType<SlotsSpace<T>> for F2Reader<'a, C>
+where
+    Self: MakeType<T>,
+{
+    fn make_type(&mut self) -> Result<SlotsSpace<T>, <Self as Maker>::Error> {
+        self.slots.push(Default::default());
+        let res = self.make().map(SlotsSpace);
+        self.slots.pop();
+        res
+    }
+}
+
+impl<'a, C> Has<Slots> for F2Reader<'a, C> {
+    fn give(&self) -> &Slots {
+        self.slots.last().expect("last slots")
+    }
+    fn give_mut(&mut self) -> &mut Slots {
+        self.slots.last_mut().expect("last slots")
+    }
+}
+
+macro_rules! make_pod {
+    ($($typ:ty),*$(,)?) => {
+        $(
+            impl<'a, C> MakeWith<F2Reader<'a, C>> for Pod<$typ> {
+                fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Pod<$typ>, F2ReaderError> {
+                    use $crate::sniffer::Sniffer;
+                    Ok(Pod(maker.sniffer.sniff_pod_reverse().map_err(F2ReaderError::SniffError)?))
+                }
+            }
+            impl From<Pod<$typ>> for $typ {
+                fn from(pod: Pod<$typ>) -> Self {
+                    pod.0
+                }
+            }
+        )*
+    };
+}
+make_pod!(u8, u16, u32, i32);
+
+/// Single big-endian number
+#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Pod<T>(pub T);
+
+impl<T: fmt::Debug> fmt::Debug for Pod<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+macro_rules! make_primitive_enum  {
+    ($($ty:ty),+$(,)?) => {
+        $(
+            impl<'a, C> represent::MakeType<$ty> for $crate::reader::F2Reader<'a, C> {
+                fn make_type(&mut self) -> Result<$ty, $crate::reader::F2ReaderError> {
+                    use num_enum::TryFromPrimitive;
+                    let pod: $crate::reader::Pod<<$ty as TryFromPrimitive>::Primitive> = self.make_type()?;
+                    Ok(<$ty>::try_from_primitive(pod.0).map_err($crate::reader::F2ReaderError::try_from_primitive)?)
+                }
+            }
+            impl From<$ty> for u32 {
+                fn from(value: $ty) -> Self {
+                    value as _
+                }
+            }
+        )+
+    };
+}
+pub(crate) use make_primitive_enum;
+
+/// Opaque type with unknown endianness
+#[derive(Clone, Copy)]
+pub struct ToDo<T>(T);
+
+impl<T: fmt::Debug> fmt::Debug for ToDo<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<'a, C, T: bytemuck::Pod + Copy> MakeWith<F2Reader<'a, C>> for ToDo<T> {
+    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<ToDo<T>, F2ReaderError> {
+        Ok(ToDo(maker.sniffer.sniff_pod_reverse().map_err(F2ReaderError::SniffError)?))
+    }
+}
+
+impl<'a, C, T> MakeWith<F2Reader<'a, C>> for Option<T>
+where
+    F2Reader<'a, C>: MakeType<T, Error = F2ReaderError>,
+{
+    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Option<T>, F2ReaderError> {
+        if maker.sniffer.is_empty() {
+            Ok(None)
+        } else {
+            maker.make().map(Some)
+        }
+    }
+}
+
+impl<'a, C, T: bytemuck::Pod, LEN> MakeWith<F2Reader<'a, C>> for BigArr<T, LEN>
+where
+    Length<LEN>: Analyze<F2Reader<'a, C>>,
+    F2Reader<'a, C>: MakeType<LEN> + Maker<Error = F2ReaderError>,
+{
+    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
+        let len: LEN = maker.make_type()?;
+        let len = Length(len).dynamic_size(maker);
+        let vec = maker.sniffer.sniff_pod_vec_reverse(len).map_err(F2ReaderError::SniffError)?;
+        Ok(BigArr::new_unchecked(vec))
+    }
+}
+/*
+impl<'a, C, LEN> MakeWith<F2Reader<'a, C>> for BigArr<u8, LEN>
+where
+    Length<LEN>: Analyze<F2Reader<'a, C>>,
+    F2Reader<'a, C>: MakeType<LEN> + Maker<Error = F2ReaderError>,
+{
+    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
+        let len: LEN = maker.make_type()?;
+        let len = Length(len).dynamic_size(maker);
+        let vec = maker.sniffer.sniff_vec(len).map_err(F2ReaderError::SniffError)?;
+        Ok(BigArr::new_unchecked(vec))
+    }
+}
+*/
+impl<'a, C, LEN> MakeWith<F2Reader<'a, C>> for BigStr<LEN>
+where
+    F2Reader<'a, C>: MakeType<BigArr<u8, LEN>> + Maker<Error = F2ReaderError>,
+{
+    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
+        Ok(BigStr(maker.make_type()?))
+    }
+}
+
+/*
+impl<'a, C, LEN> Visit<F2Reader<'a, C>> for BigStr<LEN> {
+    fn visit_with(&self, visitor: &mut V) -> Result<(), V::Error> {
+        visitor.visit(&self.0)
+    }
+}
+*/
+
+impl<'a, C, V: Verify<usize>> MakeType<LenRest<V>> for F2Reader<'a, C> {
+    fn make_type(&mut self) -> Result<LenRest<V>, F2ReaderError> {
+        let len = self.sniffer.len();
+        let len = V::verify(len);
+        Ok(LenRest::new(len))
+    }
+}
+
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+mod assert_makeable {
+    use fo_net_protocol::{msg::{StaticStr, BigStaticArr, ArrSlot}, generics::length::LenConst};
+    use represent::{MakeType, MakeWith};
+
+    use super::F2Reader;
+
+    fn make_with<'a, T: MakeWith<F2Reader<'a, ()>>>() -> T {
+        unimplemented!()
+    }
+
+    fn make_type<'a, T>() -> T
+    where
+        F2Reader<'a, ()>: MakeType<T>,
+    {
+        unimplemented!()
+    }
+
+    fn assert_container_types() {
+        let _: [LenConst<16>; 2] = [make_type(), make_with()];
+        let _: [BigStaticArr<u8, 16>; 2] = [make_type(), make_with()];
+        let _: [BigStaticArr<i32, 44>; 2] = [make_type(), make_with()];
+        let _: [StaticStr<16>; 2] = [make_type(), make_with()];
+        let _: [ArrSlot<u8, 0>; 2] = [make_type(), make_with()];
+    }
+}

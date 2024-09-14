@@ -1,0 +1,6 @@
+**/target
+**/*.rs.bk
+**/Cargo.lock
+**/log.txt
+workspace.code-workspace
+f2_dat
