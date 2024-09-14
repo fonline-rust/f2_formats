@@ -1,8 +1,8 @@
-use represent_derive::{MakeWith, Visit};
+use represent::{MakeWith, VisitWith};
 
 use super::ToDo;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Tile {
     material_id: ToDo<u32>,
 }

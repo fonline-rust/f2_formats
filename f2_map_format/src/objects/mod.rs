@@ -1,17 +1,27 @@
-use fo_net_protocol::{msg::{Repeat, RepeatSlot}, generics::{slots::{Load, Slots, Store}, HasValue, Has}};
-use represent::{Maker, MakeWith, MakeType};
-use represent_derive::{MakeWith, Visit};
-use f2_common_format::{Pid, Fid, ObjectType, reader::{SLOT_OBJECT_TYPE, F2ReaderError, F2Context, SLOT_SUB_TYPE, SlotsSpace, Pod, ToDo, SLOT_INVENTORY_COUNT}, ObjectPid, GetProto, ProtoInfo};
+use f2_common_format::{
+    reader::{
+        F2Context, F2ReaderError, Pod, SlotsSpace, ToDo, SLOT_INVENTORY_COUNT, SLOT_OBJECT_TYPE,
+        SLOT_SUB_TYPE,
+    },
+    Fid, GetProto, ObjectPid, ObjectType, Pid, ProtoInfo,
+};
+use represent::{MakeType, MakeWith, Maker, VisitWith};
+use represent_extra::{
+    generics::{
+        slots::{Load, Slots, Store},
+        Has, HasValue,
+    },
+    typedefs::{RepeatMake, RepeatSlot},
+};
 
-use crate::{slots::Levels, Hex, Unused, Unknown};
-
-use self::{item::Item, scenery::Scenery, misc::Misc};
+use self::{item::Item, misc::Misc, scenery::Scenery};
+use crate::{slots::Levels, Hex, Unknown, Unused};
 
 mod item;
-mod scenery;
 mod misc;
+mod scenery;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Objects {
     _total_objects_count: Pod<u32>,
     levels: Levels<LevelObjects>,
@@ -19,7 +29,13 @@ pub struct Objects {
 
 impl Objects {
     pub fn all_objects<'a>(&'a self) -> [impl 'a + ExactSizeIterator<Item = &'a LevelObject>; 3] {
-        let map = move |level: Option<&'a LevelObjects>| level.map(|level| level.objects.0.as_slice()).unwrap_or(&[]).into_iter().map(move |obj| &obj.0);
+        let map = move |level: Option<&'a LevelObjects>| {
+            level
+                .map(|level| level.objects.0.as_slice())
+                .unwrap_or(&[])
+                .iter()
+                .map(move |obj| &obj.0)
+        };
         [
             map(self.levels.level_0.0.as_ref()),
             map(self.levels.level_1.0.as_ref()),
@@ -28,12 +44,12 @@ impl Objects {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct LevelObjects {
-    objects: Repeat<Pod<u32>, SlotsSpace<LevelObject>>,
+    objects: RepeatMake<Pod<u32>, SlotsSpace<LevelObject>>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct LevelObject {
     pub object: Object,
     pub inventory: ObjectInventory,
@@ -45,7 +61,8 @@ pub struct Object {
     pub kind: ObjectKind,
 }
 
-impl<M: Maker + MakeType<ObjectCommon> + MakeType<ObjectKind> + Has<Slots> + HasValue<F2Context>> MakeWith<M> for Object
+impl<M: Maker + MakeType<ObjectCommon> + MakeType<ObjectKind> + Has<Slots> + HasValue<F2Context>>
+    MakeWith<M> for Object
 where
     <M as HasValue<F2Context>>::Value: GetProto,
     <M as Maker>::Error: From<F2ReaderError>,
@@ -53,17 +70,22 @@ where
     fn make_with(maker: &mut M) -> Result<Self, M::Error> {
         let common: ObjectCommon = maker.make()?;
         let pid = common.proto_id.pid();
-        let proto = maker.give_value().get_proto(pid).ok_or(F2ReaderError::ProtoNotFound(pid).into())?;
+        let proto = maker
+            .give_value()
+            .get_proto(pid)
+            .ok_or(F2ReaderError::ProtoNotFound(pid))?;
         if let Some(sub_type) = proto.sub_type() {
             let slots = maker.give_mut();
-            slots.store(SLOT_SUB_TYPE, sub_type).expect("Store sub type only once");
+            slots
+                .store(SLOT_SUB_TYPE, sub_type)
+                .expect("Store sub type only once");
         }
         let kind = maker.make()?;
-        Ok(Self{common, kind})
+        Ok(Self { common, kind })
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct ObjectCommon {
     separator: Unused<u32>,
     hex: Hex,
@@ -95,7 +117,7 @@ impl ObjectCommon {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(
     ty = "Load<ObjectType, SLOT_OBJECT_TYPE>",
     err = "F2ReaderError",
@@ -116,7 +138,7 @@ pub enum ObjectKind {
     Misc(Misc),
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct ObjectInventory {
     slots: RepeatSlot<SlotsSpace<InventoryObject>, SLOT_INVENTORY_COUNT>,
 }
@@ -127,7 +149,7 @@ impl ObjectInventory {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct InventoryObject {
     quantity: Pod<u32>,
     object: Object,
@@ -136,12 +158,13 @@ impl InventoryObject {
     pub fn quantity(&self) -> u32 {
         self.quantity.0
     }
+
     pub fn object(&self) -> &Object {
         &self.object
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Critter {
     unknown: Unknown<[u32; 7]>,
     /// Current Hit Points

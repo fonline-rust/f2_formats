@@ -1,8 +1,11 @@
-use fo_net_protocol::generics::slots::Load;
-use represent_derive::{MakeWith, Visit};
-use f2_common_format::{reader::{SLOT_SUB_TYPE, Pod, ToDo}, ItemSubType, Pid};
+use f2_common_format::{
+    reader::{Pod, ToDo, SLOT_SUB_TYPE},
+    ItemSubType, Pid,
+};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::Load;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ItemSubType, SLOT_SUB_TYPE>")]
 pub enum Item {
     #[alt("Load(ItemSubType::Armor)")]
@@ -21,26 +24,26 @@ pub enum Item {
     Key(Key),
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Weapon {
-    /// Ammo count. Amount of ammunition loaded in this weapon. 
+    /// Ammo count. Amount of ammunition loaded in this weapon.
     ammo_quantity: Pod<u32>,
-    /// Ammo count. Amount of ammunition loaded in this weapon. 
-    ammo_id: Pid, 
+    /// Ammo count. Amount of ammunition loaded in this weapon.
+    ammo_id: Pid,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Ammo {
-    /// Amount of ammo in magazine. Number of bullets or charges in this magazine. 
+    /// Amount of ammo in magazine. Number of bullets or charges in this magazine.
     quantity: Pod<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct MiscItem {
     charges: Pod<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Key {
     key_code: ToDo<u32>,
 }

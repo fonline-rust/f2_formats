@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-represent = { path = "../fo_network/represent" }
-represent_derive = { path = "../fo_network/represent_derive" }
-fo_net_protocol = { path = "../fo_network/net_protocol" }
-f2_common_format = { path = "../f2_common_format" }
+f2_common_format.workspace = true
+represent.workspace = true
+represent_extra.workspace = true

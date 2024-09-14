@@ -1,11 +1,13 @@
-use f2_common_format::{reader::{ToDo, Pod, F2ReaderError, SlotsSpace, SLOT_SCRIPT_TYPE}, Sid, ScriptType};
-use fo_net_protocol::generics::{collections::RepeatExt, length::LenConst, slots::Load};
-use represent::{MakeWith, Maker, MakeType};
-use represent_derive::{MakeWith, Visit};
+use f2_common_format::{
+    reader::{F2ReaderError, Pod, SlotsSpace, ToDo, SLOT_SCRIPT_TYPE},
+    ScriptType, Sid,
+};
+use represent::{MakeType, MakeWith, Maker, VisitWith};
+use represent_extra::generics::{collections::RepeatExt, length::LenConst, slots::Load};
 
 use crate::{Unknown, Unused};
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Scripts {
     sequences: RepeatExt<Sequence, LenConst<5>>,
 }
@@ -15,17 +17,15 @@ struct Sequence {
     scripts: Vec<Script>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Script {
     /// PID of the script.
     pid: Sid,
     slot: ScriptSlot,
 }
 
-#[derive(MakeWith, Visit)]
-#[alt(
-    ty = "Load<ScriptType, SLOT_SCRIPT_TYPE>",
-)]
+#[derive(MakeWith, VisitWith)]
+#[alt(ty = "Load<ScriptType, SLOT_SCRIPT_TYPE>")]
 enum ScriptSlot {
     #[alt("Load(ScriptType::Invalid)")]
     Garbage(Unused<[u32; 15]>),
@@ -42,26 +42,26 @@ impl std::fmt::Debug for ScriptSlot {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct ScriptBody {
     /// Next script. Unused.
     next_script: Unused<i32>,
     kind: ScriptKind,
-    /// Script flags (0 in maps, value in saves). 
+    /// Script flags (0 in maps, value in saves).
     flags: ToDo<u32>,
     /// Script id.
     /// Script filename is found in LST file script.lst at index id.
     script_id: ToDo<u32>,
     unknown_5: Unknown<i32>,
     script_oid: ToDo<u32>,
-    /// Local var offset (-1 in maps, value  on saves). 
+    /// Local var offset (-1 in maps, value  on saves).
     local_var_offset: ToDo<i32>,
     /// Num local vars (0 in maps, value in saves).
     num_local_vars: ToDo<u32>,
     unknown: Unknown<[i32; 8]>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(
     ty = "Load<ScriptType, SLOT_SCRIPT_TYPE>",
     err = "F2ReaderError",
@@ -80,7 +80,7 @@ enum ScriptKind {
     Critter,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct SpatialScript {
     /// Spatial script hex. First two bytes are elevation:
     /// 0x0000 - 1
@@ -91,7 +91,7 @@ struct SpatialScript {
     radius: ToDo<i32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct TimerScript {
     /// Timer script time
     timer: ToDo<i32>,
@@ -99,20 +99,23 @@ struct TimerScript {
 
 #[derive(Debug)]
 enum Error {
-    Check{count: u32, check: u32},
+    Check { count: u32, check: u32 },
 }
 
 impl From<Error> for F2ReaderError {
     fn from(value: Error) -> Self {
         match value {
-            Error::Check { count, check } => Self::Validation(format!("Wrong number of scripts: {check} != {count}")),
+            Error::Check { count, check } => {
+                Self::Validation(format!("Wrong number of scripts: {check} != {count}"))
+            }
         }
     }
 }
 
-impl<M: Maker + MakeType<Pod<u32>> + MakeType<SlotsSpace<Script>> + MakeType<Unused<[u32; 16]>>> MakeWith<M> for Sequence
+impl<M: Maker + MakeType<Pod<u32>> + MakeType<SlotsSpace<Script>> + MakeType<Unused<[u32; 16]>>>
+    MakeWith<M> for Sequence
 where
-    Error: Into<M::Error>
+    Error: Into<M::Error>,
 {
     fn make_with(maker: &mut M) -> Result<Self, M::Error> {
         let Pod(count) = maker.make()?;
@@ -131,9 +134,9 @@ where
             let _unknown: Pod<u32> = maker.make()?;
         }
         if check != count {
-            Err(Error::Check { count, check}.into())
+            Err(Error::Check { count, check }.into())
         } else {
-            Ok(Self{scripts})
+            Ok(Self { scripts })
         }
     }
 }

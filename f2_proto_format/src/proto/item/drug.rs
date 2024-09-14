@@ -1,15 +1,15 @@
 use f2_common_format::Perk;
-use represent_derive::{MakeWith, Visit};
+use represent::{MakeWith, VisitWith};
 
 use super::ToDo;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Drug {
     /// Determines what character's characteristic is to be changed
     /// Values:
-    /// (see stat.msg, starting with the line 100) 
-    /// 0 - Strength 
-    /// 1 - Perception 
+    /// (see stat.msg, starting with the line 100)
+    /// 0 - Strength
+    /// 1 - Perception
     /// 2 - Endurance
     /// ...
     /// -1 - no effect
@@ -28,12 +28,12 @@ pub struct Drug {
 
 type Amount = ToDo<[i32; 3]>;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Addiction {
-    /// The probability of getting addicted, in percent. 
+    /// The probability of getting addicted, in percent.
     rate: ToDo<i32>,
     /// Number of the perk to be given when the player is addicted.
-    /// Note: any perk can be used, but not all will work. 
+    /// Note: any perk can be used, but not all will work.
     effect: Perk,
     /// Delay before the addiction effect is applied.
     onset: ToDo<i32>,

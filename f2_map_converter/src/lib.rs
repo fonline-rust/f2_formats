@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use f2_common_format::{Pid, GetProto};
-use f2_proto_format::{proto::Proto, parse_proto};
-use f2_map_format::{parse_map, Map, LevelObject};
+use f2_common_format::{GetProto, Pid};
+use f2_map_format::{parse_map, Map};
+use f2_proto_format::{parse_proto, proto::Proto};
 use hashbrown::HashMap;
 
 pub struct Context {
@@ -19,8 +19,9 @@ impl<'a> GetProto for &'a Context {
 impl Context {
     pub fn init(protos_path: &Path) -> Self {
         let protos = Self::walk_protos(protos_path);
-        Self{protos}
+        Self { protos }
     }
+
     fn walk_protos(path: &Path) -> HashMap<Pid, Proto> {
         let pro = Some("PRO".into());
         let mut protos = HashMap::new();
@@ -41,7 +42,12 @@ impl Context {
         println!("Parsed {} protos in {path:?}", protos.len());
         protos
     }
-    pub fn walk_maps(&self, base_path: &Path, ignore: impl Fn(&Path, &Result<&str, ValidationError>) -> bool) -> Maps {
+
+    pub fn walk_maps(
+        &self,
+        base_path: &Path,
+        ignore: impl Fn(&Path, &Result<&str, ValidationError>) -> bool,
+    ) -> Maps {
         let map = Some("MAP".into());
 
         let mut maps = Maps::default();
@@ -73,16 +79,37 @@ impl Context {
             }
             //println!("Ok! Header: {:?}, Objects count: {:?}, Tail: {:?}", res.header(), res.objects().all_objects().into_iter().map(|iter| iter.len()).collect::<Vec<_>>(), res.tail().len());
         }
-        println!("Parsed {{ valid: {}, invalid: {}, ignored: {} }} maps in {base_path:?}", maps.valid_maps.len(), maps.invalid_maps.len(), maps.ignored_maps.len());
+        println!(
+            "Parsed {{ valid: {}, invalid: {}, ignored: {} }} maps in {base_path:?}",
+            maps.valid_maps.len(),
+            maps.invalid_maps.len(),
+            maps.ignored_maps.len()
+        );
 
         maps
     }
 }
 
-fn validate<'a>(map: &'a Map, maps: &HashMap<String, (PathBuf, Map)>) -> Result<&'a str, ValidationError> {
-    let nested_container: Vec<_> = map.objects().all_objects().into_iter().flatten().filter(|cont| cont.inventory.slots().any(|obj| obj.object().common.inventory_count() != 0)).collect();
+fn validate<'a>(
+    map: &'a Map,
+    maps: &HashMap<String, (PathBuf, Map)>,
+) -> Result<&'a str, ValidationError> {
+    let nested_container: Vec<_> = map
+        .objects()
+        .all_objects()
+        .into_iter()
+        .flatten()
+        .filter(|cont| {
+            cont.inventory
+                .slots()
+                .any(|obj| obj.object().common.inventory_count() != 0)
+        })
+        .collect();
     if !nested_container.is_empty() {
-        return Err(ValidationError::NestedContainers(format!("{:#?}", nested_container)));
+        return Err(ValidationError::NestedContainers(format!(
+            "{:#?}",
+            nested_container
+        )));
     }
 
     let tail = map.tail();
@@ -121,29 +148,34 @@ mod tests {
     use super::*;
 
     fn parse(path: &str, ignore: impl Fn(&Path, &Result<&str, ValidationError>) -> bool) -> Maps {
-        let path = format!("/home/qthree/gamedev/fonline/f2_dat/{path}");
+        let path = format!("../f2_dat/dats/{path}");
         let context = Context::init(path.as_ref());
         context.walk_maps(path.as_ref(), ignore)
     }
 
     fn show_valid(maps: &Maps) {
         for (_name, (path, map)) in &maps.valid_maps {
-            eprintln!("Valid map {path:?},\n    Header: {:?}, Objects count: {:?}\n", map.header(), map.objects().all_objects().into_iter().map(|iter| iter.len()).collect::<Vec<_>>());
+            eprintln!(
+                "Valid map {path:?},\n    Header: {:?}, Objects count: {:?}\n",
+                map.header(),
+                map.objects()
+                    .all_objects()
+                    .into_iter()
+                    .map(|iter| iter.len())
+                    .collect::<Vec<_>>()
+            );
         }
     }
     fn show_invalid(maps: &Maps) {
         for (path, (reason, map)) in &maps.invalid_maps {
             eprintln!("Invalid map {path:?},\n    because {reason:?}");
-            match &reason {
-                ValidationError::NonNullTail => {
-                    //let objects: Vec<_> = map.objects().all_objects().into_iter().flatten().collect();
-                    //let len = objects.len();
-                    //let last_objects = &objects[(len.saturating_sub(3))..len];
+            if let ValidationError::NonNullTail = &reason {
+                //let objects: Vec<_> = map.objects().all_objects().into_iter().flatten().collect();
+                //let len = objects.len();
+                //let last_objects = &objects[(len.saturating_sub(3))..len];
 
-                    //eprintln!("    last objects: {:#?}", last_objects);
-                    eprintln!("    tail: {:?} bytes\n", map.tail().len());
-                }
-                _ => {},
+                //eprintln!("    last objects: {:#?}", last_objects);
+                eprintln!("    tail: {:?} bytes\n", map.tail().len());
             }
         }
     }
@@ -156,9 +188,8 @@ mod tests {
     #[test]
     fn parse_fallout2() {
         let maps = parse("fallout2/master.dat", |path, res| {
-            matches!(res, Err(ValidationError::NonNullTail)) && (
-                path.ends_with("NewR1a.map") || path.ends_with ("NewR2a.map")
-            )
+            matches!(res, Err(ValidationError::NonNullTail))
+                && (path.ends_with("NewR1a.map") || path.ends_with("NewR2a.map"))
         });
         show_valid(&maps);
         show_ingnored(&maps);
@@ -181,7 +212,9 @@ mod tests {
 
     #[test]
     fn parse_nevada() {
-        let maps = parse("nevada/master.dat", |path, _| path.components().any(|comp| comp.as_os_str() == "delete"));
+        let maps = parse("nevada/master.dat", |path, _| {
+            path.components().any(|comp| comp.as_os_str() == "delete")
+        });
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);
@@ -192,9 +225,11 @@ mod tests {
 
     #[test]
     fn parse_olympus() {
-        let maps = parse("olympus/master.dat", |path, res| path.ends_with("02test.MAP") || (
-            path.ends_with("rbfabric.MAP") && matches!(res, Err(ValidationError::NonNullTail))
-        ));
+        let maps = parse("olympus/master.dat", |path, res| {
+            path.ends_with("02test.MAP")
+                || (path.ends_with("rbfabric.MAP")
+                    && matches!(res, Err(ValidationError::NonNullTail)))
+        });
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);

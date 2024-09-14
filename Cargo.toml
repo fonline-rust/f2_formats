@@ -1,3 +1,21 @@
 [workspace]
-version = "2"
-members = ["f2_common_format", "f2_dat",  "f2_map_converter",  "f2_map_format",  "f2_proto_format"]
+resolver = "2"
+members = ["f2_common_format",  "f2_map_format",  "f2_proto_format", "f2_map_converter"]
+
+[workspace.dependencies]
+f2_common_format = { path = "./f2_common_format" }
+f2_map_format = { path = "./f2_map_format" }
+f2_proto_format = { path = "./f2_proto_format" }
+
+represent = { git = "https://github.com/qthree/represent.git", commit = "42b6b75c1ddb17236843b2587cb38712a9f88ba6", features = ["derive"] }
+represent_extra = { git = "https://github.com/qthree/represent.git", commit = "42b6b75c1ddb17236843b2587cb38712a9f88ba6" }
+
+bytemuck = { version = "1", features = ["min_const_generics"] }
+bytes = "1"
+hashbrown = "0.14"
+num_enum = "0.7"
+walkdir = "2"
+
+[patch."https://github.com/qthree/represent.git"]
+#represent = { path = "../represent" }
+#represent_extra = { path = "../represent/extra" }

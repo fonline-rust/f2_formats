@@ -1,9 +1,19 @@
 use std::fmt;
 
-use represent::{TypeAnalyzer, Maker, MakeWith, MakeType, Analyze};
-use fo_net_protocol::generics::{slots::{Slots, SlotLoadError}, Has, HasValue, collections::{BigStr, BigArr}, length::{Length, LenRest, Verify}};
+use represent::{MakeType, MakeWith, Maker};
+use represent_extra::{
+    generics::{
+        slots::{SlotLoadError, Slots},
+        HasValue,
+    },
+    impl_analyzer,
+    traits::{BytesLeft, MakeBlob},
+};
 
-use crate::{sniffer::{F2Sniffer, F2SniffError, Sniffer}, Pid};
+use crate::{
+    sniffer::{F2SniffError, F2Sniffer, Sniffer},
+    Pid,
+};
 
 pub const SLOT_OBJECT_TYPE: usize = 0;
 pub const SLOT_SUB_TYPE: usize = 1;
@@ -20,6 +30,7 @@ pub struct F2Context;
 
 impl<'a, C> HasValue<F2Context> for F2Reader<'a, C> {
     type Value = C;
+
     fn give_value(&self) -> &C {
         &self.context
     }
@@ -74,7 +85,7 @@ impl F2ReaderError {
     }
 }
 
-impl<'a, C> TypeAnalyzer for F2Reader<'a, C> {}
+impl_analyzer!(['a, C] for F2Reader<'a, C>);
 
 impl<'a, C> Maker for F2Reader<'a, C> {
     type Error = F2ReaderError;
@@ -101,11 +112,14 @@ where
     }
 }
 
-impl<'a, C> Has<Slots> for F2Reader<'a, C> {
-    fn give(&self) -> &Slots {
+impl<'a, C> HasValue<Slots> for F2Reader<'a, C> {
+    type Value = Slots;
+
+    fn give_value(&self) -> &Slots {
         self.slots.last().expect("last slots")
     }
-    fn give_mut(&mut self) -> &mut Slots {
+
+    fn give_value_mut(&mut self) -> &mut Slots {
         self.slots.last_mut().expect("last slots")
     }
 }
@@ -146,7 +160,7 @@ macro_rules! make_primitive_enum  {
                 fn make_type(&mut self) -> Result<$ty, $crate::reader::F2ReaderError> {
                     use num_enum::TryFromPrimitive;
                     let pod: $crate::reader::Pod<<$ty as TryFromPrimitive>::Primitive> = self.make_type()?;
-                    Ok(<$ty>::try_from_primitive(pod.0).map_err($crate::reader::F2ReaderError::try_from_primitive)?)
+                    <$ty>::try_from_primitive(pod.0).map_err($crate::reader::F2ReaderError::try_from_primitive)
                 }
             }
             impl From<$ty> for u32 {
@@ -171,7 +185,12 @@ impl<T: fmt::Debug> fmt::Debug for ToDo<T> {
 
 impl<'a, C, T: bytemuck::Pod + Copy> MakeWith<F2Reader<'a, C>> for ToDo<T> {
     fn make_with(maker: &mut F2Reader<'a, C>) -> Result<ToDo<T>, F2ReaderError> {
-        Ok(ToDo(maker.sniffer.sniff_pod_reverse().map_err(F2ReaderError::SniffError)?))
+        Ok(ToDo(
+            maker
+                .sniffer
+                .sniff_pod_reverse()
+                .map_err(F2ReaderError::SniffError)?,
+        ))
     }
 }
 
@@ -188,62 +207,28 @@ where
     }
 }
 
-impl<'a, C, T: bytemuck::Pod, LEN> MakeWith<F2Reader<'a, C>> for BigArr<T, LEN>
-where
-    Length<LEN>: Analyze<F2Reader<'a, C>>,
-    F2Reader<'a, C>: MakeType<LEN> + Maker<Error = F2ReaderError>,
-{
-    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
-        let len: LEN = maker.make_type()?;
-        let len = Length(len).dynamic_size(maker);
-        let vec = maker.sniffer.sniff_pod_vec_reverse(len).map_err(F2ReaderError::SniffError)?;
-        Ok(BigArr::new_unchecked(vec))
-    }
-}
-/*
-impl<'a, C, LEN> MakeWith<F2Reader<'a, C>> for BigArr<u8, LEN>
-where
-    Length<LEN>: Analyze<F2Reader<'a, C>>,
-    F2Reader<'a, C>: MakeType<LEN> + Maker<Error = F2ReaderError>,
-{
-    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
-        let len: LEN = maker.make_type()?;
-        let len = Length(len).dynamic_size(maker);
-        let vec = maker.sniffer.sniff_vec(len).map_err(F2ReaderError::SniffError)?;
-        Ok(BigArr::new_unchecked(vec))
-    }
-}
-*/
-impl<'a, C, LEN> MakeWith<F2Reader<'a, C>> for BigStr<LEN>
-where
-    F2Reader<'a, C>: MakeType<BigArr<u8, LEN>> + Maker<Error = F2ReaderError>,
-{
-    fn make_with(maker: &mut F2Reader<'a, C>) -> Result<Self, F2ReaderError> {
-        Ok(BigStr(maker.make_type()?))
+impl<'a, C> MakeBlob for F2Reader<'a, C> {
+    fn make_blob<T: bytemuck::Pod>(&mut self, len: usize) -> Result<Vec<T>, F2ReaderError> {
+        self.sniffer
+            .sniff_pod_vec_reverse(len)
+            .map_err(F2ReaderError::SniffError)
     }
 }
 
-/*
-impl<'a, C, LEN> Visit<F2Reader<'a, C>> for BigStr<LEN> {
-    fn visit_with(&self, visitor: &mut V) -> Result<(), V::Error> {
-        visitor.visit(&self.0)
-    }
-}
-*/
-
-impl<'a, C, V: Verify<usize>> MakeType<LenRest<V>> for F2Reader<'a, C> {
-    fn make_type(&mut self) -> Result<LenRest<V>, F2ReaderError> {
-        let len = self.sniffer.len();
-        let len = V::verify(len);
-        Ok(LenRest::new(len))
+impl<'a, C> BytesLeft for F2Reader<'a, C> {
+    fn bytes_left(&self) -> usize {
+        self.sniffer.len()
     }
 }
 
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
 mod assert_makeable {
-    use fo_net_protocol::{msg::{StaticStr, BigStaticArr, ArrSlot}, generics::length::LenConst};
     use represent::{MakeType, MakeWith};
+    use represent_extra::{
+        generics::length::LenConst,
+        typedefs::{BigArrSlot, BigStaticArr, StaticStr},
+    };
 
     use super::F2Reader;
 
@@ -263,6 +248,6 @@ mod assert_makeable {
         let _: [BigStaticArr<u8, 16>; 2] = [make_type(), make_with()];
         let _: [BigStaticArr<i32, 44>; 2] = [make_type(), make_with()];
         let _: [StaticStr<16>; 2] = [make_type(), make_with()];
-        let _: [ArrSlot<u8, 0>; 2] = [make_type(), make_with()];
+        let _: [BigArrSlot<u8, 0>; 2] = [make_type(), make_with()];
     }
 }

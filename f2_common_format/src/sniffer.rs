@@ -1,4 +1,4 @@
-use bytes::{BufMut, Buf};
+use bytes::{Buf, BufMut};
 
 pub(super) trait Sniffer {
     type SniffError;
@@ -32,10 +32,16 @@ pub(super) trait Sniffer {
         self.sniff_to(&mut vec)?;
         Ok(vec.into_inner())
     }
-    fn sniff_pod_vec_reverse<T: bytemuck::Pod + Copy>(&mut self, len: usize) -> Result<Vec<T>, Self::SniffError> {
+    fn sniff_pod_vec_reverse<T: bytemuck::Pod + Copy>(
+        &mut self,
+        len: usize,
+    ) -> Result<Vec<T>, Self::SniffError> {
         self.sniff_pod_vec_ext::<_, true>(len)
     }
-    fn sniff_pod_vec_ext<T: bytemuck::Pod + Copy, const REVERSE: bool>(&mut self, len: usize) -> Result<Vec<T>, Self::SniffError> {
+    fn sniff_pod_vec_ext<T: bytemuck::Pod + Copy, const REVERSE: bool>(
+        &mut self,
+        len: usize,
+    ) -> Result<Vec<T>, Self::SniffError> {
         let mut vec = Vec::with_capacity(len);
         for _ in 0..len {
             vec.push(self.sniff_pod_ext::<_, REVERSE>()?);
@@ -52,9 +58,11 @@ impl<'a> F2Sniffer<'a> {
     pub(super) fn new(buf: &'a [u8]) -> Self {
         Self { buf }
     }
+
     pub(super) fn len(&self) -> usize {
         self.buf.len()
     }
+
     pub(super) fn is_empty(&self) -> bool {
         self.buf.is_empty()
     }
@@ -67,6 +75,7 @@ pub enum F2SniffError {
 
 impl<'a> Sniffer for F2Sniffer<'a> {
     type SniffError = F2SniffError;
+
     fn skip(&mut self, count: usize) -> Result<(), Self::SniffError> {
         if self.buf.len() < count {
             return Err(F2SniffError::NotEnoughBytes);
@@ -74,6 +83,7 @@ impl<'a> Sniffer for F2Sniffer<'a> {
         self.buf.advance(count);
         Ok(())
     }
+
     fn sniff_to<B: BufMut>(&mut self, to: &mut B) -> Result<(), Self::SniffError> {
         let len = to.remaining_mut();
         if self.buf.len() < len {

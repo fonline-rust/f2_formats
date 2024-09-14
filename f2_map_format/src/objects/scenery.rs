@@ -1,8 +1,11 @@
-use fo_net_protocol::generics::slots::Load;
-use represent_derive::{MakeWith, Visit};
-use f2_common_format::{reader::{SLOT_SUB_TYPE, ToDo}, ScenerySubType, Destination};
+use f2_common_format::{
+    reader::{ToDo, SLOT_SUB_TYPE},
+    Destination, ScenerySubType,
+};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::Load;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ScenerySubType, SLOT_SUB_TYPE>")]
 pub enum Scenery {
     #[alt("Load(ScenerySubType::Door)")]
@@ -19,28 +22,28 @@ pub enum Scenery {
     Generic,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Door {
     walk_through: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Elevator {
     /// Elevator type
     ty: ToDo<u32>,
     /// Current level of the elevator (not to be confused with the level of map!).
-    /// This parameter specifies which floor the arrow initially points at. 
+    /// This parameter specifies which floor the arrow initially points at.
     level: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Stairs {
     destination: Destination,
     /// Destination map
     map: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Ladder {
     destination: Destination,
     /// Destination map

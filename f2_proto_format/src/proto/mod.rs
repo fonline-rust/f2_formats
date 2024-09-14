@@ -1,14 +1,18 @@
-use self::{item::Item, critter::Critter, scenery::Scenery, wall::Wall, tile::Tile, misc::Misc};
-use f2_common_format::{ObjectType, Pid, ObjectPid, Fid, reader::{SLOT_OBJECT_TYPE, ToDo, F2ReaderError}, ProtoInfo};
-use represent_derive::{MakeWith, Visit};
-use fo_net_protocol::generics::slots::Load;
+use f2_common_format::{
+    reader::{F2ReaderError, ToDo, SLOT_OBJECT_TYPE},
+    Fid, ObjectPid, ObjectType, ProtoInfo,
+};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::Load;
 
-mod item;
+use self::{critter::Critter, item::Item, misc::Misc, scenery::Scenery, tile::Tile, wall::Wall};
+
 mod critter;
-mod scenery;
-mod wall;
-mod tile;
+mod item;
 mod misc;
+mod scenery;
+mod tile;
+mod wall;
 
 #[derive(Debug, MakeWith)]
 pub struct Proto {
@@ -20,6 +24,7 @@ impl Proto {
     pub fn common(&self) -> &ProtoCommon {
         &self.common
     }
+
     pub fn kind(&self) -> &ProtoKind {
         &self.kind
     }
@@ -36,7 +41,7 @@ impl ProtoInfo for Proto {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct ProtoCommon {
     pub proto_pid: ObjectPid,
     text_id: ToDo<u32>,
@@ -46,7 +51,7 @@ pub struct ProtoCommon {
     flags: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(
     ty = "Load<ObjectType, SLOT_OBJECT_TYPE>",
     err = "F2ReaderError",

@@ -20,7 +20,7 @@ mod tests {
     fn walk(path: &str) {
         let mut walked = 0;
         let pro = Some("PRO".into());
-        for entry in walkdir::WalkDir::new(format!("/home/qthree/gamedev/fonline/f2_dat/{path}"))
+        for entry in walkdir::WalkDir::new(format!("../f2_dat/dats/{path}"))
             .into_iter()
             .flatten()
             .filter(|entry| entry.file_type().is_file())

@@ -2,7 +2,6 @@ use represent::Maker;
 
 use crate::reader::{F2Reader, F2ReaderError, Pod};
 
-
 #[derive(Debug)]
 pub struct Fid {
     ty: FrmType,
@@ -24,7 +23,7 @@ impl Mask {
 }
 // TODO: make macro
 const fn calc_fid_masks() -> [Mask; 4 + 1] {
-    let mut masks = [Mask{shift: 32, mask: 0}; 5];
+    let mut masks = [Mask { shift: 32, mask: 0 }; 5];
     let mut i = 0u32;
     let mut mask = 1;
     while i < 32 {
@@ -34,7 +33,7 @@ const fn calc_fid_masks() -> [Mask; 4 + 1] {
             16..=23 => 2,
             24..=27 => 3,
             28..=31 => 4,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         if masks[part].shift > i {
             masks[part].shift = i;
@@ -49,7 +48,6 @@ const MASKS: [Mask; 5] = calc_fid_masks();
 
 impl<'a, C> represent::MakeType<Fid> for F2Reader<'a, C> {
     fn make_type(&mut self) -> Result<Fid, F2ReaderError> {
-        
         use num_enum::TryFromPrimitive;
         let Pod(raw): Pod<u32> = self.make()?;
 
@@ -62,7 +60,11 @@ impl<'a, C> represent::MakeType<Fid> for F2Reader<'a, C> {
         let ty = FrmType::try_from_primitive(ty_byte).map_err(F2ReaderError::try_from_primitive)?;
 
         Ok(Fid {
-            ty, lst_index, id1, id2, id3,
+            ty,
+            lst_index,
+            id1,
+            id2,
+            id3,
         })
     }
 }

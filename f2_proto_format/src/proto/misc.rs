@@ -1,9 +1,9 @@
-use f2_common_format::{ObjectPid, MiscSubType};
-use represent_derive::{MakeWith, Visit};
+use f2_common_format::{MiscSubType, ObjectPid};
+use represent::{MakeWith, VisitWith};
 
 use super::ToDo;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Misc {
     unknown: ToDo<u32>,
 }

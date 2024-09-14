@@ -1,24 +1,24 @@
-use fo_net_protocol::generics::slots::Store;
-use reader::{SLOT_SCRIPT_TYPE, F2Reader, ToDo};
-use represent_derive::{MakeWith, Visit};
-use crate::reader::F2ReaderError;
+use reader::{F2Reader, ToDo, SLOT_SCRIPT_TYPE};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::Store;
 
 use self::reader::{Pod, SLOT_OBJECT_TYPE};
+use crate::reader::F2ReaderError;
 
+mod fid;
 pub mod reader;
 mod sniffer;
-mod fid;
 
 pub use self::fid::{Fid, FrmType};
 
-#[derive(Debug, MakeWith, Visit, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, MakeWith, VisitWith, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Pid {
     ty: ObjectType,
     dummy: Pod<u8>,
     id: Pod<u16>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct ObjectPid {
     ty: Store<ObjectType, SLOT_OBJECT_TYPE>,
     dummy: Pod<u8>,
@@ -29,10 +29,16 @@ impl ObjectPid {
     pub fn ty(&self) -> ObjectType {
         self.ty.inner
     }
+
     pub fn pid(&self) -> Pid {
-        let Self { ty: Store { inner: ty }, dummy, id } = *self;
+        let Self {
+            ty: Store { inner: ty },
+            dummy,
+            id,
+        } = *self;
         Pid { ty, dummy, id }
     }
+
     pub fn id(&self) -> u16 {
         self.id.0
     }
@@ -54,7 +60,7 @@ pub enum ObjectType {
     Invalid = 255,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Sid {
     ty: Store<ScriptType, SLOT_SCRIPT_TYPE>,
     dummy: Pod<u8>,
@@ -69,7 +75,7 @@ pub enum ScriptType {
     Timer = 2,
     Item = 3,
     Critter = 4,
-    Invalid
+    Invalid,
 }
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
@@ -105,7 +111,7 @@ pub enum MiscSubType {
 /// Values:
 /// (see perk.msg, starting with the line 101)
 /// -1 for no perk
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Perk(Pod<i32>);
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
@@ -135,7 +141,7 @@ macro_rules! try_from_try_into {
         $(
             impl TryFrom<$from> for $into {
                 type Error = F2ReaderError;
-            
+
                 fn try_from(value: $from) -> Result<Self, Self::Error> {
                     use num_enum::TryFromPrimitive;
                     Self::try_from_primitive(value.try_into().map_err(F2ReaderError::try_from_primitive)?).map_err(F2ReaderError::try_from_primitive)
@@ -169,12 +175,12 @@ pub trait GetProto {
 /// DestElev:
 /// A can be anything ( setting DestElev in Fallout 2 mapper autmatically sets A to 0xC )
 /// B values:
-///   0x0: zero 
-///   0x2: first 
+///   0x0: zero
+///   0x2: first
 ///   0x4: second
 ///
-/// DestTile values: 0 to 40000. 
-#[derive(Debug, MakeWith, Visit)]
+/// DestTile values: 0 to 40000.
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Destination {
     todo: ToDo<u32>,
 }

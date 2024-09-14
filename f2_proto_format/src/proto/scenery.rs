@@ -1,10 +1,10 @@
-use f2_common_format::{ScenerySubType, reader::SLOT_SUB_TYPE, Destination};
-use fo_net_protocol::generics::slots::{Store, Load};
-use represent_derive::{MakeWith, Visit};
+use f2_common_format::{reader::SLOT_SUB_TYPE, Destination, ScenerySubType};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::{Load, Store};
 
 use super::ToDo;
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Scenery {
     wall_light_flags: ToDo<u16>,
     action_flags: ToDo<u16>,
@@ -21,7 +21,7 @@ impl Scenery {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ScenerySubType, SLOT_SUB_TYPE>")]
 enum SceneryKind {
     #[alt("Load(ScenerySubType::Door)")]
@@ -38,41 +38,40 @@ enum SceneryKind {
     Generic(GenericScenery),
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Door {
     /// Values:
     /// 0x0000000F: yes
     walk_through: ToDo<u32>,
-    /// 0xCCCCCCCC (mostly) or 0xFFFFFFFF (sometimes) 
+    /// 0xCCCCCCCC (mostly) or 0xFFFFFFFF (sometimes)
     unknown: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Stairs {
     destination: Destination,
     /// Destination map
-    /// Value is a map number in data\maps.txt (hard-coded list in Fallout?), -1 goes to the worldmap. 
+    /// Value is a map number in data\maps.txt (hard-coded list in Fallout?), -1 goes to the worldmap.
     map: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Elevator {
     /// Elevator type
     /// Values from 0x00 to 0x17
     ty: ToDo<u32>,
     /// Current level of the elevator (not to be confused with the level of map!).
-    /// This parameter specifies which floor the arrow initially points at. 
+    /// This parameter specifies which floor the arrow initially points at.
     level: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Ladder {
     destination: Destination,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct GenericScenery {
-    /// 0xCCCCCCCC (mostly) or 0xFFFFFFFF (sometimes) 
+    /// 0xCCCCCCCC (mostly) or 0xFFFFFFFF (sometimes)
     unknown: ToDo<u32>,
 }
-

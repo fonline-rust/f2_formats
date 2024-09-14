@@ -1,6 +1,9 @@
-use f2_common_format::{Pid, Fid, ItemSubType, Perk, reader::Pod, reader::SLOT_SUB_TYPE};
-use fo_net_protocol::generics::slots::{Store, Load};
-use represent_derive::{MakeWith, Visit};
+use f2_common_format::{
+    reader::{Pod, SLOT_SUB_TYPE},
+    Fid, ItemSubType, Perk, Pid,
+};
+use represent::{MakeWith, VisitWith};
+use represent_extra::generics::slots::{Load, Store};
 
 use super::ToDo;
 
@@ -9,7 +12,7 @@ mod weapon;
 
 use self::{drug::Drug, weapon::Weapon};
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 pub struct Item {
     flags: ToDo<u32>,
     script_id: Pid,
@@ -31,7 +34,7 @@ impl Item {
     }
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ItemSubType, SLOT_SUB_TYPE>")]
 enum ItemKind {
     #[alt("Load(ItemSubType::Armor)")]
@@ -50,18 +53,18 @@ enum ItemKind {
     Key(Key),
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Armor {
     armor_class: Pod<u32>,
     resistance: EveryDamage,
     threshold: EveryDamage,
-    /// Note: the object may have any perk, but not all will work. 
+    /// Note: the object may have any perk, but not all will work.
     perk: Perk,
     male_frm_id: Fid,
     female_frm_id: Fid,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct EveryDamage {
     normal: Pod<u32>,
     laser: Pod<u32>,
@@ -72,22 +75,22 @@ struct EveryDamage {
     explosion: Pod<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Container {
     /// Max Size (how much it can contain)
     max_size: Pod<u32>,
     /// Open Flags:
     /// 0x00000001 - Cannot Pick Up (implies Magic Hands Grnd!)
-    /// 0x00000008 - Magic Hands Grnd (reach down to open/close) 
+    /// 0x00000008 - Magic Hands Grnd (reach down to open/close)
     open_flags: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Ammo {
     /// Ammo type
     /// Values: see proto.msg, starting with the line 300
     caliber: ToDo<u32>,
-    /// The number of rounds in a magazine 
+    /// The number of rounds in a magazine
     quantity: Pod<u32>,
     armor_class_modifier: ToDo<i32>,
     damage_resistense_modifier: ToDo<i32>,
@@ -95,16 +98,16 @@ struct Ammo {
     ammo_damage_divisor: ToDo<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Misc {
     power_pid: Pid,
-    /// Values: see proto.msg, starting with the line 300 
+    /// Values: see proto.msg, starting with the line 300
     power_ty: ToDo<u32>,
-    /// The maximum number of charges 
+    /// The maximum number of charges
     charges: Pod<u32>,
 }
 
-#[derive(Debug, MakeWith, Visit)]
+#[derive(Debug, MakeWith, VisitWith)]
 struct Key {
     /// always 0xFFFFFFFF
     key_code: ToDo<u32>,
