@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-f2_common_format.workspace = true
-f2_map_format.workspace = true
-f2_proto_format.workspace = true
+f2_common_format = { workspace = true, features = ["serde"] }
+f2_map_format = { workspace = true, features = ["serde"] }
+f2_proto_format = { workspace = true, features = ["serde"] }
 
+env_logger.workspace = true
 hashbrown.workspace = true
+log.workspace = true
+serde_json.workspace = true
 walkdir.workspace = true

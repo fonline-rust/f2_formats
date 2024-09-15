@@ -4,6 +4,7 @@ use represent::{MakeWith, VisitWith};
 use super::ToDo;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Drug {
     /// Determines what character's characteristic is to be changed
     /// Values:
@@ -29,6 +30,7 @@ pub struct Drug {
 type Amount = ToDo<[i32; 3]>;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Addiction {
     /// The probability of getting addicted, in percent.
     rate: ToDo<i32>,

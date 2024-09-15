@@ -7,6 +7,7 @@ use represent_extra::generics::slots::Load;
 
 #[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<MiscSubType, SLOT_SUB_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Misc {
     #[alt("Load(MiscSubType::Generic)")]
     Generic,
@@ -15,6 +16,7 @@ pub enum Misc {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ExitGrid {
     /// EXIT-MAP-ID">EXIT-MAP-ID : Map Id. The id of the map that this exit grid leads to.
     /// Fallout 1: Map filename found in map.msg

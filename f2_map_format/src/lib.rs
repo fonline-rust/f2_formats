@@ -29,6 +29,7 @@ mod slots {
     pub type LevelCondition<T, const FLAG: u32> = Conditional<Not<Flag<FLAG, MAP_FLAGS>>, T>;
 
     #[derive(Debug, MakeWith, VisitWith)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     pub struct Levels<T> {
         pub level_0: LevelCondition<T, 0x2>,
         pub level_1: LevelCondition<T, 0x4>,
@@ -37,6 +38,7 @@ mod slots {
 }
 
 #[derive(Debug, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Map {
     header: Header,
     variables: Variables,
@@ -105,6 +107,7 @@ impl Map {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Hex(ToDo<i32>);
 
 type Unknown<T> = ToDo<T>;

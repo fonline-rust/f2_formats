@@ -4,6 +4,7 @@ use represent_extra::typedefs::BigArrSlot;
 use crate::slots;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Variables {
     global_vars: BigArrSlot<i32, { slots::NUM_GLOBAL_VARS }>,
     local_vars: BigArrSlot<i32, { slots::NUM_LOCAL_VARS }>,

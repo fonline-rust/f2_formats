@@ -22,6 +22,7 @@ mod misc;
 mod scenery;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Objects {
     _total_objects_count: Pod<u32>,
     levels: Levels<LevelObjects>,
@@ -45,17 +46,20 @@ impl Objects {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct LevelObjects {
     objects: RepeatMake<Pod<u32>, SlotsSpace<LevelObject>>,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LevelObject {
     pub object: Object,
     pub inventory: ObjectInventory,
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Object {
     pub common: ObjectCommon,
     pub kind: ObjectKind,
@@ -86,6 +90,7 @@ where
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ObjectCommon {
     separator: Unused<u32>,
     hex: Hex,
@@ -123,6 +128,7 @@ impl ObjectCommon {
     err = "F2ReaderError",
     default = "Err(F2ReaderError::InvalidObjectType.into())"
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ObjectKind {
     #[alt("Load(ObjectType::Item)")]
     Item(Item),
@@ -139,6 +145,7 @@ pub enum ObjectKind {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ObjectInventory {
     slots: RepeatSlot<SlotsSpace<InventoryObject>, SLOT_INVENTORY_COUNT>,
 }
@@ -150,6 +157,7 @@ impl ObjectInventory {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct InventoryObject {
     quantity: Pod<u32>,
     object: Object,
@@ -165,6 +173,7 @@ impl InventoryObject {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Critter {
     unknown: Unknown<[u32; 7]>,
     /// Current Hit Points

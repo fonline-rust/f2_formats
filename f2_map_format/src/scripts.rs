@@ -8,16 +8,19 @@ use represent_extra::generics::{collections::RepeatExt, length::LenConst, slots:
 use crate::{Unknown, Unused};
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Scripts {
     sequences: RepeatExt<Sequence, LenConst<5>>,
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Sequence {
     scripts: Vec<Script>,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Script {
     /// PID of the script.
     pid: Sid,
@@ -26,6 +29,7 @@ struct Script {
 
 #[derive(MakeWith, VisitWith)]
 #[alt(ty = "Load<ScriptType, SLOT_SCRIPT_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum ScriptSlot {
     #[alt("Load(ScriptType::Invalid)")]
     Garbage(Unused<[u32; 15]>),
@@ -43,6 +47,7 @@ impl std::fmt::Debug for ScriptSlot {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct ScriptBody {
     /// Next script. Unused.
     next_script: Unused<i32>,
@@ -67,6 +72,7 @@ struct ScriptBody {
     err = "F2ReaderError",
     default = "Err(F2ReaderError::InvalidScriptType.into())"
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum ScriptKind {
     #[alt("Load(ScriptType::System)")]
     System,
@@ -81,6 +87,7 @@ enum ScriptKind {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct SpatialScript {
     /// Spatial script hex. First two bytes are elevation:
     /// 0x0000 - 1
@@ -92,6 +99,7 @@ struct SpatialScript {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct TimerScript {
     /// Timer script time
     timer: ToDo<i32>,

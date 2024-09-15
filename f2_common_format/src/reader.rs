@@ -98,6 +98,7 @@ impl<'a, C, T: MakeWith<Self>> MakeType<T> for F2Reader<'a, C> {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SlotsSpace<T>(pub T);
 
 impl<'a, C, T> MakeType<SlotsSpace<T>> for F2Reader<'a, C>
@@ -145,6 +146,7 @@ make_pod!(u8, u16, u32, i32);
 
 /// Single big-endian number
 #[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Pod<T>(pub T);
 
 impl<T: fmt::Debug> fmt::Debug for Pod<T> {
@@ -175,7 +177,58 @@ pub(crate) use make_primitive_enum;
 
 /// Opaque type with unknown endianness
 #[derive(Clone, Copy)]
+//#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ToDo<T>(T);
+
+#[cfg(feature = "serde")]
+mod impl_serde {
+    use super::*;
+
+    macro_rules! delegate_serde {
+        ($($ty:ty)*) => {
+            $(
+                impl<'de> serde::Deserialize<'de> for ToDo<$ty> {
+                    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                    where
+                        D: serde::Deserializer<'de>,
+                    {
+                        Ok(Self(<$ty>::deserialize(deserializer)?))
+                    }
+                }
+
+                impl serde::Serialize for ToDo<$ty> {
+                    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                    where
+                        S: serde::Serializer,
+                    {
+                        self.0.serialize(serializer)
+                    }
+                }
+            )*
+        };
+    }
+    delegate_serde!(u8 u16 u32 i32);
+
+    impl<'de, T: serde::Deserialize<'de>, const LEN: usize> serde::Deserialize<'de> for ToDo<[T; LEN]> {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            Ok(Self(
+                <[T; LEN] as serde_big_array::BigArray<'de, T>>::deserialize(deserializer)?,
+            ))
+        }
+    }
+
+    impl<T: serde::Serialize, const LEN: usize> serde::Serialize for ToDo<[T; LEN]> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            <[T; LEN] as serde_big_array::BigArray<'_, T>>::serialize(&self.0, serializer)
+        }
+    }
+}
 
 impl<T: fmt::Debug> fmt::Debug for ToDo<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

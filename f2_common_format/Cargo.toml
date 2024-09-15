@@ -5,9 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+serde = ["dep:serde", "represent_extra/serde", "serde-big-array"]
+
 [dependencies]
 represent.workspace = true
 represent_extra.workspace = true
 num_enum.workspace = true
 bytes.workspace = true
 bytemuck.workspace = true
+serde = { workspace = true, features = ["derive"], optional = true }
+serde-big-array = { workspace = true, optional = true }

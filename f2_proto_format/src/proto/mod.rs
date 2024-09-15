@@ -15,6 +15,7 @@ mod tile;
 mod wall;
 
 #[derive(Debug, MakeWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Proto {
     common: ProtoCommon,
     kind: ProtoKind,
@@ -42,6 +43,7 @@ impl ProtoInfo for Proto {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProtoCommon {
     pub proto_pid: ObjectPid,
     text_id: ToDo<u32>,
@@ -57,6 +59,7 @@ pub struct ProtoCommon {
     err = "F2ReaderError",
     default = "Err(F2ReaderError::InvalidObjectType.into())"
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ProtoKind {
     #[alt("Load(ObjectType::Item)")]
     Item(Item),

@@ -3,6 +3,7 @@ use represent::Maker;
 use crate::reader::{F2Reader, F2ReaderError, Pod};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Fid {
     ty: FrmType,
     lst_index: u16,
@@ -71,6 +72,7 @@ impl<'a, C> represent::MakeType<Fid> for F2Reader<'a, C> {
 
 #[derive(Debug, num_enum::TryFromPrimitive)]
 #[repr(u8)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum FrmType {
     Item = 0x0,
     Critter = 0x1,

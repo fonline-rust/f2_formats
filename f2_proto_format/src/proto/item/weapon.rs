@@ -4,6 +4,7 @@ use represent::{MakeWith, VisitWith};
 use super::ToDo;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Weapon {
     /// Anim Code
     /// Which frameset is used for characters wielding that weapon.
@@ -49,6 +50,7 @@ pub struct Weapon {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Damage {
     min: ToDo<u32>,
     max: ToDo<u32>,

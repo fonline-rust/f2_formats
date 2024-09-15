@@ -5,6 +5,7 @@ use represent_extra::generics::slots::{Load, Store};
 use super::ToDo;
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Scenery {
     wall_light_flags: ToDo<u16>,
     action_flags: ToDo<u16>,
@@ -23,6 +24,7 @@ impl Scenery {
 
 #[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ScenerySubType, SLOT_SUB_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum SceneryKind {
     #[alt("Load(ScenerySubType::Door)")]
     Door(Door),
@@ -39,6 +41,7 @@ enum SceneryKind {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Door {
     /// Values:
     /// 0x0000000F: yes
@@ -48,6 +51,7 @@ struct Door {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Stairs {
     destination: Destination,
     /// Destination map
@@ -56,6 +60,7 @@ struct Stairs {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Elevator {
     /// Elevator type
     /// Values from 0x00 to 0x17
@@ -66,11 +71,13 @@ struct Elevator {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Ladder {
     destination: Destination,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct GenericScenery {
     /// 0xCCCCCCCC (mostly) or 0xFFFFFFFF (sometimes)
     unknown: ToDo<u32>,

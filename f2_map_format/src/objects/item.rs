@@ -7,6 +7,7 @@ use represent_extra::generics::slots::Load;
 
 #[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ItemSubType, SLOT_SUB_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Item {
     #[alt("Load(ItemSubType::Armor)")]
     Armor,
@@ -25,6 +26,7 @@ pub enum Item {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Weapon {
     /// Ammo count. Amount of ammunition loaded in this weapon.
     ammo_quantity: Pod<u32>,
@@ -33,17 +35,20 @@ pub struct Weapon {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ammo {
     /// Amount of ammo in magazine. Number of bullets or charges in this magazine.
     quantity: Pod<u32>,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MiscItem {
     charges: Pod<u32>,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Key {
     key_code: ToDo<u32>,
 }

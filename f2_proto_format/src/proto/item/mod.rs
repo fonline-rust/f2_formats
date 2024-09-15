@@ -13,6 +13,7 @@ mod weapon;
 use self::{drug::Drug, weapon::Weapon};
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Item {
     flags: ToDo<u32>,
     script_id: Pid,
@@ -36,6 +37,7 @@ impl Item {
 
 #[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ItemSubType, SLOT_SUB_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum ItemKind {
     #[alt("Load(ItemSubType::Armor)")]
     Armor(Armor),
@@ -54,6 +56,7 @@ enum ItemKind {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Armor {
     armor_class: Pod<u32>,
     resistance: EveryDamage,
@@ -65,6 +68,7 @@ struct Armor {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct EveryDamage {
     normal: Pod<u32>,
     laser: Pod<u32>,
@@ -76,6 +80,7 @@ struct EveryDamage {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Container {
     /// Max Size (how much it can contain)
     max_size: Pod<u32>,
@@ -86,6 +91,7 @@ struct Container {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Ammo {
     /// Ammo type
     /// Values: see proto.msg, starting with the line 300
@@ -99,6 +105,7 @@ struct Ammo {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Misc {
     power_pid: Pid,
     /// Values: see proto.msg, starting with the line 300
@@ -108,6 +115,7 @@ struct Misc {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Key {
     /// always 0xFFFFFFFF
     key_code: ToDo<u32>,

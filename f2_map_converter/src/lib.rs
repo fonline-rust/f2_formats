@@ -5,8 +5,10 @@ use f2_map_format::{parse_map, Map};
 use f2_proto_format::{parse_proto, proto::Proto};
 use hashbrown::HashMap;
 
+pub mod ignore;
+
 pub struct Context {
-    protos: HashMap<Pid, Proto>,
+    pub protos: HashMap<Pid, Proto>,
 }
 impl<'a> GetProto for &'a Context {
     type Proto = Proto;
@@ -68,12 +70,13 @@ impl Context {
             if (ignore)(stripped, &res) {
                 maps.ignored_maps.insert(stripped.into(), (res.err(), map));
             } else {
-                match validate(&map, &maps.valid_maps) {
+                match res {
                     Ok(filename) => {
-                        maps.valid_maps.insert(filename.into(), (path.into(), map));
+                        maps.valid_maps
+                            .insert(filename.into(), (stripped.into(), map));
                     }
                     Err(reason) => {
-                        maps.invalid_maps.insert(path.into(), (reason, map));
+                        maps.invalid_maps.insert(stripped.into(), (reason, map));
                     }
                 }
             }
@@ -113,7 +116,7 @@ fn validate<'a>(
     }
 
     let tail = map.tail();
-    if !(tail.is_empty() || tail == &[0; 4] || tail == &[0; 8]) {
+    if !(tail.is_empty() || tail == [0; 4] || tail == [0; 8]) {
         return Err(ValidationError::NonNullTail);
     }
 
@@ -138,9 +141,9 @@ pub enum ValidationError {
 
 #[derive(Default)]
 pub struct Maps {
-    valid_maps: HashMap<String, (PathBuf, Map)>,
-    invalid_maps: HashMap<PathBuf, (ValidationError, Map)>,
-    ignored_maps: HashMap<PathBuf, (Option<ValidationError>, Map)>,
+    pub valid_maps: HashMap<String, (PathBuf, Map)>,
+    pub invalid_maps: HashMap<PathBuf, (ValidationError, Map)>,
+    pub ignored_maps: HashMap<PathBuf, (Option<ValidationError>, Map)>,
 }
 
 #[cfg(test)]
@@ -187,10 +190,7 @@ mod tests {
 
     #[test]
     fn parse_fallout2() {
-        let maps = parse("fallout2/master.dat", |path, res| {
-            matches!(res, Err(ValidationError::NonNullTail))
-                && (path.ends_with("NewR1a.map") || path.ends_with("NewR2a.map"))
-        });
+        let maps = parse("fallout2/master.dat", ignore::fallout2);
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);
@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn parse_sonora() {
-        let maps = parse("sonora/master.dat", |_, _| false);
+        let maps = parse("sonora/master.dat", ignore::sonora);
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);
@@ -212,9 +212,7 @@ mod tests {
 
     #[test]
     fn parse_nevada() {
-        let maps = parse("nevada/master.dat", |path, _| {
-            path.components().any(|comp| comp.as_os_str() == "delete")
-        });
+        let maps = parse("nevada/master.dat", ignore::nevada);
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);
@@ -225,11 +223,7 @@ mod tests {
 
     #[test]
     fn parse_olympus() {
-        let maps = parse("olympus/master.dat", |path, res| {
-            path.ends_with("02test.MAP")
-                || (path.ends_with("rbfabric.MAP")
-                    && matches!(res, Err(ValidationError::NonNullTail)))
-        });
+        let maps = parse("olympus/master.dat", ignore::olympus);
         show_valid(&maps);
         show_ingnored(&maps);
         show_invalid(&maps);

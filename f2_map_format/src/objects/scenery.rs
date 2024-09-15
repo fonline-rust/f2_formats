@@ -7,6 +7,7 @@ use represent_extra::generics::slots::Load;
 
 #[derive(Debug, MakeWith, VisitWith)]
 #[alt(ty = "Load<ScenerySubType, SLOT_SUB_TYPE>")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Scenery {
     #[alt("Load(ScenerySubType::Door)")]
     Door(Door),
@@ -23,11 +24,13 @@ pub enum Scenery {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Door {
     walk_through: ToDo<u32>,
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Elevator {
     /// Elevator type
     ty: ToDo<u32>,
@@ -37,6 +40,7 @@ pub struct Elevator {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Stairs {
     destination: Destination,
     /// Destination map
@@ -44,6 +48,7 @@ pub struct Stairs {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ladder {
     destination: Destination,
     /// Destination map

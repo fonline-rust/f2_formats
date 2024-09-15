@@ -8,6 +8,7 @@ use represent_extra::{generics::slots::Store, typedefs::StaticStr};
 use crate::{slots, Hex, Unused};
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Header {
     /// Map version.
     version: MapVersion,

@@ -5,10 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+serde = ["dep:serde", "represent_extra/serde"]
+
 [dependencies]
 f2_common_format.workspace = true
 represent.workspace = true
 represent_extra.workspace = true
+serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
 walkdir.workspace = true

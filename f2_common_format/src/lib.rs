@@ -12,13 +12,25 @@ mod sniffer;
 pub use self::fid::{Fid, FrmType};
 
 #[derive(Debug, MakeWith, VisitWith, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Pid {
     ty: ObjectType,
     dummy: Pod<u8>,
     id: Pod<u16>,
 }
 
+impl Pid {
+    pub fn ty(&self) -> ObjectType {
+        self.ty
+    }
+
+    pub fn id(&self) -> u16 {
+        self.id.0
+    }
+}
+
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ObjectPid {
     ty: Store<ObjectType, SLOT_OBJECT_TYPE>,
     dummy: Pod<u8>,
@@ -46,6 +58,7 @@ impl ObjectPid {
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ObjectType {
     Item = 0,
     Critter = 1,
@@ -61,6 +74,7 @@ pub enum ObjectType {
 }
 
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Sid {
     ty: Store<ScriptType, SLOT_SCRIPT_TYPE>,
     dummy: Pod<u8>,
@@ -68,6 +82,7 @@ pub struct Sid {
 }
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u8)]
 pub enum ScriptType {
     System = 0,
@@ -80,6 +95,7 @@ pub enum ScriptType {
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
 #[repr(u32)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ItemSubType {
     Armor = 0,
     Container = 1,
@@ -92,6 +108,7 @@ pub enum ItemSubType {
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
 #[repr(u32)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScenerySubType {
     Door = 0,
     Stairs = 1,
@@ -112,9 +129,11 @@ pub enum MiscSubType {
 /// (see perk.msg, starting with the line 101)
 /// -1 for no perk
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Perk(Pod<i32>);
 
 #[derive(Debug, num_enum::TryFromPrimitive, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u32)]
 pub enum MapVersion {
     //Fallout1 = 19,
@@ -181,6 +200,7 @@ pub trait GetProto {
 ///
 /// DestTile values: 0 to 40000.
 #[derive(Debug, MakeWith, VisitWith)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Destination {
     todo: ToDo<u32>,
 }
